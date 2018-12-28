@@ -1,0 +1,139 @@
+ We'll create a simple LED blinking app and connect a LED to your Windows 10 IoT Core device.
+1Load the project in Visual Studio
+
+You can find the source code for this sample by downloading a zip of all of our samples here and navigating to the samples-develop\HelloBlinky. The sample code is available in either C++ or C#, however the documentation here only details the C# variant. Open the project in Visual Studio as follows:
+
+    Copy the folder to somewhere on your PC's disk (for example, C:\Users\username\Documents)
+    In the copied location, navigate to HelloBlinky/CS and double-click on the Visual Studio Solution file called Blinky (Blinky.sln)
+
+Be aware that the GPIO APIs are only available on Windows 10 IoT Core, so this sample cannot run on your desktop.
+2Connect the LED to your Windows IoT device
+
+You'll need a few components:
+
+    a LED (any color you like)
+    a 220 ? resistor
+    a breadboard and a couple of connector wires
+
+Electrical Components
+
+Follow this steps:
+
+    Connect the shorter leg of the LED to GPIO 5 (pin 29 on the expansion header).
+    Connect the longer leg of the LED to the resistor.
+    Connect the other end of the resistor to one of the 3.3V pins on the board.
+    Note that the polarity of the LED is important. (This configuration is commonly known as Active Low)
+
+Image made with Fritzing
+3Deploy your app
+
+    With the application open in Visual Studio, set the architecture (ARM) in the toolbar dropdown.
+
+    Next, click on the dropdown directly to the right of the architecture dropdown and select Remote Machine.
+
+Remote Machine Target
+
+    At this point, Visual Studio will present the Remote Connections dialog. If you previously used IoT Dashboard to set a unique name for your device, you can enter it here (in this example, we're using my-device). Otherwise, use the IP address of your Windows IoT Core device. After entering the device name/IP select Universal for Windows Authentication, then click Select.
+
+Remote Machine Debugging
+
+    You can verify or modify these values by navigating to the project properties (double-click Properties in the Solution Explorer) and choosing the Debug tab on the left.
+
+Project Properties Debug Tab
+
+    When everything is set up, you should be able to press F5 (or hit the "|> Remote Machine" button) from Visual Studio. A few notes here:
+        If there are any missing packages that you did not install during setup, Visual Studio may prompt you to acquire those now.
+        If you set up a pin for debugging earlier, you may see a dialog that says "A PIN is required to establish a remote connection to the device."
+
+    The Blinky app will deploy and start on the Windows IoT device, and you should see the LED blink in sync with the simulation on the screen.
+
+Blinky Application Running
+
+    Congratulations! You controlled one of the GPIO pins on your Windows IoT device.
+
+4Timer code
+
+THe code for this sample is listed below. We use a timer, and each time the 'Tick' event is called, we flip the state of the LED. For more details on how the timer works, see this tutorial and the associated DispatcherTimer and Timer documentation.
+
+Here is how you set up the timer in C#:
+
+public MainPage()
+{
+    // ...
+
+    timer = new DispatcherTimer();
+    timer.Interval = TimeSpan.FromMilliseconds(500);
+    timer.Tick += Timer_Tick;
+    InitGPIO();
+    if (pin != null)
+    {
+        timer.Start();
+    }
+
+    // ...
+}
+
+private void Timer_Tick(object sender, object e)
+{
+    if (pinValue == GpioPinValue.High)
+    {
+        pinValue = GpioPinValue.Low;
+        pin.Write(pinValue);
+        LED.Fill = redBrush;
+    }
+    else
+    {
+        pinValue = GpioPinValue.High;
+        pin.Write(pinValue);
+        LED.Fill = grayBrush;
+    }
+}
+
+5Initialize the GPIO pin
+
+To drive the GPIO pin, first we need to initialize it. Here is the C# code:
+
+using Windows.Devices.Gpio;
+
+private void InitGPIO()
+{
+    var gpio = GpioController.GetDefault();
+
+    // Show an error if there is no GPIO controller
+    if (gpio == null)
+    {
+        pin = null;
+        GpioStatus.Text = "There is no GPIO controller on this device.";
+        return;
+    }
+
+    pin = gpio.OpenPin(LED_PIN);
+    pinValue = GpioPinValue.High;
+    pin.Write(pinValue);
+    pin.SetDriveMode(GpioPinDriveMode.Output);
+
+    GpioStatus.Text = "GPIO pin initialized correctly.";
+
+}
+
+Let's break this down a little:
+
+    First, we use GpioController.GetDefault() to get the GPIO controller.
+    If the device does not have a GPIO controller, this function will return null.
+    Then we attempt to open the pin by calling GpioController.OpenPin() with the LED_PIN value.
+    Once we have the pin, we set it to be off (High) by default using the GpioPin.Write() function.
+    We also set the pin to run in output mode using the GpioPin.SetDriveMode() function.
+
+6Modify the state of the GPIO pin
+
+Once we have access to the GpioOutputPin instance, it's trivial to change the state of the pin to turn the LED on or off.
+
+To turn the LED on, simply write the value GpioPinValue.Low to the pin:
+
+pin.Write(GpioPinValue.Low);
+
+and of course, write `GpioPinValue.High` to turn the LED off:
+
+pin.Write(GpioPinValue.High);
+
+Remember that we connected the other end of the LED to the 3.3 Volts power supply, so we need to drive the pin to low to have current flow into the LED.

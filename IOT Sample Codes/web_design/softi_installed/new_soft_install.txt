@@ -1,0 +1,18 @@
+sudo apt-get install apache2 
+sudo apt-get update 
+sudo apt-get install php5
+
+sudo apt-get install git-core
+
+git clone git://git.drogon.net/wiringPi
+
+cd wiringPi
+
+./build
+
+sudo apt-get install fswebcam
+sudo apt-get install luvcview
+sudo apt-get install espeak
+
+sudo apt-get install xrdp
+sudo apt-get install tightvncserver
